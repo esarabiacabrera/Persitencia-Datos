@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System;
+using Random = UnityEngine.Random;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -11,10 +14,13 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    [SerializeField] Text UsuarioPuntaje;
     public GameObject GameOverText;
     
     private bool m_Started = false;
     private int m_Points;
+    private int puntajeGuardado;
+    private String usuarioGuardado;
     
     private bool m_GameOver = false;
 
@@ -36,6 +42,9 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+        LoadDataUsuario();
+        
+         
     }
 
     private void Update()
@@ -70,7 +79,49 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
+        LoadDataUsuario();
+        if(m_Points>puntajeGuardado) {
+
+            DatosScene.Instance.mejorPuntaje=m_Points;
+            SaveDataUsuario();
+        }
+            
+
+        UsuarioPuntaje.text="Best Score: "+usuarioGuardado+": "+puntajeGuardado;
+        
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
+
+    [System.Serializable]
+    class SaveData{
+        public String nombreUsuario;
+        public int mejorPuntaje;
+    }
+
+    public void SaveDataUsuario()
+    {
+        SaveData data = new SaveData();
+        data.nombreUsuario = DatosScene.Instance.nombreUsuario;
+        data.mejorPuntaje=DatosScene.Instance.mejorPuntaje;
+
+        string json = JsonUtility.ToJson(data);
+    
+        File.WriteAllText(Application.persistentDataPath + "/savefileUsuario.json", json);
+    }
+
+    public void LoadDataUsuario()
+    {
+        string path = Application.persistentDataPath + "/savefileUsuario.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+            puntajeGuardado=data.mejorPuntaje;
+            usuarioGuardado=data.nombreUsuario;
+            UsuarioPuntaje.text="Best Score: "+data.nombreUsuario+": "+data.mejorPuntaje;
+        }
+    }
+
+
 }
